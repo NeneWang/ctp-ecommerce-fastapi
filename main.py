@@ -12,7 +12,7 @@ from database import SessionLocal, engine
 import models
 import os, json
 from dotenv import load_dotenv
-from routes import utils
+from routes import utils, ecommerce
 
 from models import AuthDetails, AccountSchema
 from auth import AuthHandler
@@ -28,6 +28,9 @@ from sqlalchemy import Column, String, Float, Integer
 
 from sqlalchemy.ext.declarative import declarative_base
 from fastapi_crudrouter import SQLAlchemyCRUDRouter
+
+
+
 
 load_dotenv()
 
@@ -80,6 +83,7 @@ app.include_router(profileRoutes)
 app.include_router(interactionRoutes)
 
 app.include_router(utils.router)
+app.include_router(ecommerce.router)
 
 
 
