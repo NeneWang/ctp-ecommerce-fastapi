@@ -11,7 +11,7 @@ from typing import Optional
 
 import os, json
 from dotenv import load_dotenv
-
+db = SessionLocal()
 
 
 S3_BUCKET_NAME = 'myplatinumbucket'
@@ -28,6 +28,137 @@ router = APIRouter(
 async def getLogByID(id: str ):
     
     return {"Welcome": "Getting welcome message from: "+id}
+
+
+@router.post('/create_sample')
+async def createSample():
+    """
+    - [ ] Creates sample with items on the chart
+    - [ ] You have multiple samples with different user ids
+    """
+    USERID_COMPUTER = "13"
+    USERID_BYCICLE = "14"
+    USERID_APPLIANCE = "15"
+
+    interactions = []
+    
+    ID_LAPTOP = "1004739"
+    ID_PHONE = "1306631"
+
+    ID_BYCICLE = "12200053"
+    ID_APPLIANCE ="3700600"
+
+    interactions.append(
+        models.Interaction(
+        product_id=ID_LAPTOP,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_COMPUTER
+    )
+    )
+    
+    interactions.append(models.Interaction(
+        product_id=ID_LAPTOP,
+        event_type=models.EEventTypes.CART.value,
+        user_id=USERID_COMPUTER
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_LAPTOP,
+        event_type=models.EEventTypes.PURCHASE.value,
+        user_id=USERID_COMPUTER
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_PHONE,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_COMPUTER
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_PHONE,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_COMPUTER
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_APPLIANCE,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_APPLIANCE
+    ))
+
+    interactions.append(models.Interaction(
+        product_id=ID_APPLIANCE,
+        event_type=models.EEventTypes.CART.value,
+        user_id=USERID_APPLIANCE
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_APPLIANCE,
+        event_type=models.EEventTypes.PURCHASE.value,
+        user_id=USERID_APPLIANCE
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_BYCICLE,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_BYCICLE
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_BYCICLE,
+        event_type=models.EEventTypes.VIEW.value,
+        user_id=USERID_BYCICLE
+    ))
+
+    
+    interactions.append(models.Interaction(
+        product_id=ID_BYCICLE,
+        event_type=models.EEventTypes.CART.value,
+        user_id=USERID_BYCICLE
+    ))
+
+    users = []
+
+    users.append(
+        models.User(
+            user_id=USERID_COMPUTER,
+        )
+    )
+
+    users.append(
+        models.User(
+            user_id=USERID_APPLIANCE,
+        )
+    )
+
+    users.append(
+        models.User(
+            user_id=USERID_BYCICLE,
+        )
+    )
+
+    for interaction in interactions:
+        db.add(interaction)
+
+    for user in users:
+        db.add(user)
+
+
+
+    db.commit()
+
+
+
+
+
+
 
 # Gets the interaction dataframe
 @router.get('/rcommendations/{session_id}')

@@ -101,6 +101,13 @@ class Interaction(Base):
     user_id = Column(String(255), nullable=True, server_default = "")
     event_type = Column(String, nullable=True, server_default=EEventTypes.VIEW.value )
     
+class User(Base):
+    __tablename__ = "user"
+    id=Column(Integer, primary_key = True, autoincrement=True, index=True)
+    guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
+    user_id=Column(String(255), nullable=True, server_default = func.gen_random_uuid())
+
+
 class Account(Base):
     __tablename__ = "account"
     id=Column(Integer, primary_key = True, autoincrement=True, index=True)
