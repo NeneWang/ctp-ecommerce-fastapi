@@ -27,3 +27,4 @@ pydantic
 PyJWT
 six
 starlette
+uvicorn
