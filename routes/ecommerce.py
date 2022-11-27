@@ -157,10 +157,7 @@ async def createSample():
 
 
 
-
-
-
-# Gets the interaction dataframe
+# Gets the interaction dataframe, user 13-> desktop, 14, 15
 @router.get('/rcommendations/{session_id}')
 async def getRecommendations(session_id: str):
     """
@@ -170,7 +167,32 @@ async def getRecommendations(session_id: str):
     """
 
     # Todo this you need to get the query of all the items with certain id. THen you want to get into an aggregation
+    allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
+    print(allUserInteraction)
 
+    productsRating  = dict()
+
+    eventMappings = {
+        models.EEventTypes.VIEW.value : 1,
+        models.EEventTypes.CART.value : 3,
+        models.EEventTypes.PURCHASE.value : 5,
+
+    }
+
+    for userInteraction in allUserInteraction:
+        product_id = userInteraction.product_id
+        event_type = userInteraction.event_type
+
+        if product_id not in productsRating:
+            productsRating[product_id] = 0
+        
+        try:
+            productsRating[product_id] += eventMappings[event_type]
+        except Exception as e:
+            productsRating[product_id] += 0
+
+    print(productsRating)
+    return(productsRating)
 
     pass
 
