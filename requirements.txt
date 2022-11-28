@@ -32,3 +32,4 @@ scipy
 matplotlib
 scikit-learn 
 IPython
+python-slugify

@@ -61,6 +61,14 @@ app.add_middleware(
 )
 
 
+productRoutes = SQLAlchemyCRUDRouter(
+    schema=models.ProductSchema,
+    db_model= models.Product,
+    db=get_db,
+    prefix=models.Product.__tablename__
+
+)
+
 profileRoutes = SQLAlchemyCRUDRouter(
     schema=models.ProfileSchema,
     create_schema=models.ProfileCreate,
@@ -80,6 +88,7 @@ interactionRoutes = SQLAlchemyCRUDRouter(
 
 
 app.include_router(profileRoutes)
+app.include_router(productRoutes)
 app.include_router(interactionRoutes)
 
 app.include_router(utils.router)
@@ -99,6 +108,12 @@ if __name__ == "__main__":
 
 auth_handler = AuthHandler()
 users = []
+
+@app.get('/product_slug/{slug}')
+def getproductslug(slug: str):
+    query_product = db.query(models.Product).filter(models.Product.slug == slug).first()
+    return query_product
+
 
 @app.post('/register', status_code=201)
 def register(auth_details: AuthDetails):

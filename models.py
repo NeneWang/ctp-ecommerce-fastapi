@@ -119,12 +119,20 @@ class Product(Base):
     price = Column(Numeric)
     product_name = Column(String)
     img_src = Column(String)
+    slug = Column(String)
     count = Column(Numeric)
     priority = Column(Numeric, nullable=True)
 
+    
+    class Config:
+        orm_mode = True
 
-class Product5m(Base):
-    __tablename__ = "product_5m"
+
+class Product10m(Base):
+    """
+    I will be using 10 m instead because it is 
+    """
+    __tablename__ = "product_10m"
     id=Column(Integer, primary_key = True, autoincrement=True, index=True)
     guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
     product_id = Column(String)
@@ -134,8 +142,13 @@ class Product5m(Base):
     price = Column(Numeric)
     product_name = Column(String)
     img_src = Column(String)
+    slug = Column(String)
     count = Column(Numeric)
     priority = Column(Numeric, nullable=True)
+
+    
+    class Config:
+        orm_mode = True
 
 
 
@@ -148,15 +161,42 @@ class Account(Base):
 
 
 
+class ProductSchema(BaseModel):
+    id:int
+    guid: str
+    product_id: str
+    category_id: Optional[str]
+    category_code: Optional[str]
+    brand: Optional[str]
+    price: Optional[float]
+    product_name: Optional[str]
+    img_src: Optional[str]
+    slug: Optional[str]
+    count: Optional[int]
+    priority: Optional[int]
+
+    
+    class Config:
+        orm_mode = True
 
 
 class ProfileCreate(BaseModel):
     name: Optional[str]
     organization_id:int
 
+    
+    class Config:
+        orm_mode = True
+
+
+
 class ProfileUpdate(BaseModel):
     name: Optional[str]
     mapping_instruction:Optional[str]
+
+    
+    class Config:
+        orm_mode = True
 
 class ProfileSchema(ProfileUpdate):
     id: Optional[int]
@@ -177,9 +217,17 @@ class InteractionSchema(InteractionCreate):
     id: int
     guid: str
 
+    
+    class Config:
+        orm_mode = True
+
 class AccountSchema(BaseModel):
     username:str
     password:str
+
+    
+    class Config:
+        orm_mode = True
 
 
 

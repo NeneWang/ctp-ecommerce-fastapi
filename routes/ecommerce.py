@@ -10,6 +10,7 @@ import datetime
 from typing import Optional
 import pandas as pd
 from ecommerceEngine import RecommenderEngine, EDataframe
+from slugify import slugify
 
 
 PRODUCTS_FILE = "dist-data/products.csv"
@@ -223,6 +224,7 @@ def populateProducts(nrows:int = 1000000):
                 price=dfrow[ROW_PRICE],
                 product_name=dfrow[ROW_NAME],
                 count=dfrow[ROW_COUNT],
+                slug=slugify(dfrow[ROW_NAME]),
                 priority = idx,
                 img_src= getImgSrc(dfrow[ROW_PRODUCT_ID])
             )
@@ -235,8 +237,8 @@ def populateProducts(nrows:int = 1000000):
     return {"result" : "Success"}
 
 
-@router.post('/populate_ecommerce_5m/{nrows}')
-def populateProducts5m(nrows:int = 5000000):
+@router.post('/populate_ecommerce_10m/{nrows}')
+def populateProducts5m(nrows:int = 10000000):
     df = pd.read_csv('data/2019-Oct.csv',nrows = nrows)
     ROW_CATEGORY_CODE = "category_code"
     ROW_CATEGORY_ID = "category_id"
@@ -255,7 +257,7 @@ def populateProducts5m(nrows:int = 5000000):
     df[ROW_BRAND] = df[ROW_BRAND].astype(str) 
 
     def getImgSrc(product_id:str):
-        return f"http://wngnelson.com/assets/img_src/oct1m/images/{product_id}.jpg"
+        return f"http://wngnelson.com/assets/img_src/oct10m/images/{product_id}.jpg"
 
     def create_name(dfrow):
         return returnSpaceForNan(dfrow[ROW_CATEGORY_CODE]) + " "+ returnSpaceForNan(dfrow[ROW_BRAND])
@@ -278,7 +280,7 @@ def populateProducts5m(nrows:int = 5000000):
         
         for index, dfrow in df.iterrows():
             idx+=1
-            model_product = models.Product5m(
+            model_product = models.Product10m(
                 product_id = dfrow[ROW_PRODUCT_ID],
                 category_id = dfrow[ROW_CATEGORY_ID],
                 category_code = dfrow[ROW_CATEGORY_CODE],
@@ -286,6 +288,7 @@ def populateProducts5m(nrows:int = 5000000):
                 price=dfrow[ROW_PRICE],
                 product_name=dfrow[ROW_NAME],
                 count=dfrow[ROW_COUNT],
+                slug=slugify(dfrow[ROW_NAME]),
                 priority = idx,
                 img_src= getImgSrc(dfrow[ROW_PRODUCT_ID])
             )
