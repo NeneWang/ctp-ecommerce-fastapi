@@ -349,6 +349,24 @@ async def getRecommendationsProducts(session_id: str, limit: int=5):
     return(res_json )
 
 
+@router.get('/recommendations_detail_product/{product_id}')
+async def getRecommendationsProducts(product_id: str, limit: int=5):
+    listInteract = []
+    listInteract.append(
+        models.Interaction(
+            product_id=product_id,
+            user_id=-1,
+            event_type=models.EEventTypes.PURCHASE.value
+        )
+    )
+    df_interacted_products = interactionLogsToDF(allUserInteraction=listInteract)
+    
+    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
+    
+    print("Recommended list", unique_product_id)
+    res_json = getProductsJSONFromList(unique_product_id)
+    return(res_json )
+
 def getProductsJSONFromList(product_id_list: List[str]) -> str:
     """
     [1, 2, 3] -> [Product(id: 1, ...), Product(id: 2, ...), Product(id: 3, ...)]
