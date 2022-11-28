@@ -350,7 +350,7 @@ async def getRecommendationsProducts(session_id: str, limit: int=5):
 
 
 @router.get('/recommendations_detail_product/{product_id}')
-async def getRecommendationsProducts(product_id: str, limit: int=5):
+async def getRecommendationsProductsFromDetail(product_id: str, limit: int=5):
     listInteract = []
     listInteract.append(
         models.Interaction(
