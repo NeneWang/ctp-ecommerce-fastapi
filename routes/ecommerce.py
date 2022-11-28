@@ -172,9 +172,9 @@ async def createSample():
 
     db.commit()
 
-@router.post('/populate_ecommerce')
-async def populateProducts():
-    df = pd.read_csv('data/2019-Oct.csv',nrows = 10)
+@router.post('/populate_ecommerce/{nrows}')
+def populateProducts(nrows:int = 1000000):
+    df = pd.read_csv('data/2019-Oct.csv',nrows = nrows)
     ROW_CATEGORY_CODE = "category_code"
     ROW_CATEGORY_ID = "category_id"
     ROW_BRAND = "brand"
@@ -185,9 +185,14 @@ async def populateProducts():
     ROW_TIME = "event_time"
     ROW_PRICE = "price"
     ROW_SESSION = "user_session"
+    ROW_IMG = "img_src"
+
     
     df[ROW_CATEGORY_CODE] = df[ROW_CATEGORY_CODE].astype(str)
     df[ROW_BRAND] = df[ROW_BRAND].astype(str) 
+
+    def getImgSrc(product_id:str):
+        return f"http://wngnelson.com/assets/img_src/oct1m/images/{product_id}.jpg"
 
     def create_name(dfrow):
         return returnSpaceForNan(dfrow[ROW_CATEGORY_CODE]) + " "+ returnSpaceForNan(dfrow[ROW_BRAND])
@@ -218,15 +223,80 @@ async def populateProducts():
                 price=dfrow[ROW_PRICE],
                 product_name=dfrow[ROW_NAME],
                 count=dfrow[ROW_COUNT],
-                priority = idx
+                priority = idx,
+                img_src= getImgSrc(dfrow[ROW_PRODUCT_ID])
             )
 
             db.add(model_product)
     
     loopProductsImages(products)
     db.commit()
-    
+
     return {"result" : "Success"}
+
+
+@router.post('/populate_ecommerce_5m/{nrows}')
+def populateProducts5m(nrows:int = 5000000):
+    df = pd.read_csv('data/2019-Oct.csv',nrows = nrows)
+    ROW_CATEGORY_CODE = "category_code"
+    ROW_CATEGORY_ID = "category_id"
+    ROW_BRAND = "brand"
+    ROW_NAME="product_name"
+    ROW_PRODUCT_ID = "product_id"
+    ROW_COUNT = "count"
+    ROW_EVENT = "event_type"
+    ROW_TIME = "event_time"
+    ROW_PRICE = "price"
+    ROW_SESSION = "user_session"
+    ROW_IMG = "img_src"
+
+    
+    df[ROW_CATEGORY_CODE] = df[ROW_CATEGORY_CODE].astype(str)
+    df[ROW_BRAND] = df[ROW_BRAND].astype(str) 
+
+    def getImgSrc(product_id:str):
+        return f"http://wngnelson.com/assets/img_src/oct1m/images/{product_id}.jpg"
+
+    def create_name(dfrow):
+        return returnSpaceForNan(dfrow[ROW_CATEGORY_CODE]) + " "+ returnSpaceForNan(dfrow[ROW_BRAND])
+
+    def returnSpaceForNan(field):
+        return field if field != "nan" else ""
+
+    df[ROW_NAME] = df.apply(create_name, axis=1)
+    gb_count = df.groupby(ROW_PRODUCT_ID)[ROW_NAME].agg(["count"])
+
+    products = df.drop_duplicates(ROW_NAME)
+    products = products.merge(gb_count,how="left" , on=ROW_PRODUCT_ID)
+    products = products.sort_values(ROW_COUNT, ascending=False)
+    columns_to_drop = [ROW_EVENT, ROW_TIME, ROW_SESSION]
+    products = products.drop(columns=columns_to_drop)
+
+    def loopProductsImages(df):
+        sizedf = len(df)
+        idx = 0
+        
+        for index, dfrow in df.iterrows():
+            idx+=1
+            model_product = models.Product5m(
+                product_id = dfrow[ROW_PRODUCT_ID],
+                category_id = dfrow[ROW_CATEGORY_ID],
+                category_code = dfrow[ROW_CATEGORY_CODE],
+                brand=dfrow[ROW_BRAND],
+                price=dfrow[ROW_PRICE],
+                product_name=dfrow[ROW_NAME],
+                count=dfrow[ROW_COUNT],
+                priority = idx,
+                img_src= getImgSrc(dfrow[ROW_PRODUCT_ID])
+            )
+
+            db.add(model_product)
+    
+    loopProductsImages(products)
+    db.commit()
+
+    return {"result" : "Success"}
+
 
 # Gets the interaction dataframe, user 13-> desktop, 14, 15
 @router.get('/rcommendations/{session_id}')

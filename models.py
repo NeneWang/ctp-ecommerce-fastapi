@@ -118,8 +118,26 @@ class Product(Base):
     brand = Column(String)
     price = Column(Numeric)
     product_name = Column(String)
-    count = Column(Numeric, nullable=True),
+    img_src = Column(String)
+    count = Column(Numeric)
     priority = Column(Numeric, nullable=True)
+
+
+class Product5m(Base):
+    __tablename__ = "product_5m"
+    id=Column(Integer, primary_key = True, autoincrement=True, index=True)
+    guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
+    product_id = Column(String)
+    category_id = Column(String)
+    category_code = Column(String)
+    brand = Column(String)
+    price = Column(Numeric)
+    product_name = Column(String)
+    img_src = Column(String)
+    count = Column(Numeric)
+    priority = Column(Numeric, nullable=True)
+
+
 
 class Account(Base):
     __tablename__ = "account"
