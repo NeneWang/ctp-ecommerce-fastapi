@@ -313,42 +313,8 @@ async def getRecommendationsMerged(session_id: str):
 
     # Todo this you need to get the query of all the items with certain id. THen you want to get into an aggregation
     allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
-    print(allUserInteraction)
-
-    productsRating  = dict()
-
-    eventMappings = {
-        models.EEventTypes.VIEW.value : 1,
-        models.EEventTypes.CART.value : 3,
-        models.EEventTypes.PURCHASE.value : 5,
-
-    }
-
-    for userInteraction in allUserInteraction:
-        product_id = userInteraction.product_id
-        event_type = userInteraction.event_type
-
-        if product_id not in productsRating:
-            productsRating[product_id] = 0
-        
-        try:
-            productsRating[product_id] += eventMappings[event_type]
-        except Exception as e:
-            productsRating[product_id] += 0
-
-    dictToVConvert = {}
-    product_id_row = []
-    product_score_row = []
-    for key in productsRating:
-        product_id_row.append(key)
-        product_score_row.append(productsRating[key])
-
-    dictToVConvert[ROW_PRODUCT_ID] = product_id_row
-    dictToVConvert[ROW_SCORE] = product_score_row
-
-    df_interacted_products = pd.DataFrame.from_dict(dictToVConvert)
-    # print(df_interacted_products.head())
-    
+    df_interacted_products = interactionLogsToDF(allUserInteraction=allUserInteraction)
+       
     recommenderEngine = RecommenderEngine(df_interacted_products, INTERACTIONS_FILEIn=INTERACTIONS_FILE, FILE_PRODUCT_MAPPINGSIn= FILE_PRODUCT_MAPPINGS)
     
     recommenderEngine.populateRecommendation()
@@ -359,28 +325,62 @@ async def getRecommendationsMerged(session_id: str):
     detailed_recommednation = prod_rec.merge(df_products, how="inner" , on=ROW_PRODUCT_ID)
     detailed_recommednation = detailed_recommednation.sort_values("mean")
     detailed_dict = detailed_recommednation.head(5).to_dict()
-    print("detailed_dict")
     print(detailed_dict)
-    return(json.dumps(prod_rec))
+    return(detailed_dict)
 
 
 @router.get('/recommendations_products/{session_id}')
-async def getRecommendationsProducts(session_id: str):
+async def getRecommendationsProducts(session_id: str, limit: int=5):
     """
     - [x] Get the dataframe based on the session id. (All interactions)
     - [x] Returns ids of the recommendation as List[str]
     - [x] Get that as a function.
     - [x] Get user Interaction as df -> function
-    
     """
 
     # Todo this you need to get the query of all the items with certain id. THen you want to get into an aggregation
     allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
     df_interacted_products = interactionLogsToDF(allUserInteraction=allUserInteraction)
     
-    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products)
+    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
+    
+    print("Recommended list", unique_product_id)
+    res_json = getProductsJSONFromList(unique_product_id)
+    return(res_json )
 
-    return(unique_product_id )
+
+def getProductsJSONFromList(product_id_list: List[str]) -> str:
+    """
+    [1, 2, 3] -> [Product(id: 1, ...), Product(id: 2, ...), Product(id: 3, ...)]
+    """
+    # product_id_list.append("44600062") # For testing if lists works
+    product_id_list.append("2900536") # For testing if lists works
+    # res = db.query(models.Product).filter(models.Product.product_id.in_(product_id_list)).all()
+    # TODO Delete the following for normal
+    res = db.query(models.Product).filter(models.Product.product_id.in_(product_id_list)).all()
+    print("using get products form list")
+    product_list = []
+    
+    for prod in res:
+        product = models.ProductSchema(
+            id = prod.id,
+            guid = prod.guid,
+            product_id=prod.product_id,
+            category_id = prod.category_id,
+            category_code=prod.category_code,
+            brand=prod.brand,
+            price=prod.price,
+            product_name=prod.product_name,
+            img_src=prod.img_src,
+            slug=prod.slug,
+            count=prod.count,
+            priority=prod.priority
+
+        )
+        product_list.append(product)
+
+
+    return [ ob.__dict__ for ob in product_list]
 
 def interactionLogsToDF(allUserInteraction: List[models.Interaction]) -> pd.core.frame.DataFrame:
     productsRating  = dict()
@@ -424,8 +424,13 @@ def getRecommendedIdUsingDF(df_interacted_products: pd.core.frame.DataFrame, lim
     recommenderEngine.populateRecommendation()
     prod_rec = recommenderEngine.getRecommendation()
     
-    prod_rec[ROW_PRODUCT_ID] = prod_rec[ROW_PRODUCT_ID].astype(str)
-    unique_product_id = list(prod_rec[ROW_PRODUCT_ID].unique())
+    
+    prod_rec[ROW_PRODUCT_ID] = prod_rec[ROW_PRODUCT_ID].astype(int)
+    detailed_recommednation = prod_rec.merge(df_products, how="inner" , on=ROW_PRODUCT_ID)
+    detailed_recommednation = detailed_recommednation.sort_values("mean")
+    
+    detailed_recommednation[ROW_PRODUCT_ID] = detailed_recommednation[ROW_PRODUCT_ID].astype(str)
+    unique_product_id = list(detailed_recommednation[ROW_PRODUCT_ID].unique())
     if(limit > 0):
         return unique_product_id[:limit]
     return unique_product_id
