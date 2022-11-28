@@ -6,6 +6,7 @@ import boto3
 from database import SessionLocal
 from enum import Enum;
 from pydantic import BaseModel
+from typing import List
 import datetime
 from typing import Optional
 import pandas as pd
@@ -302,8 +303,8 @@ def populateProducts5m(nrows:int = 10000000):
 
 
 # Gets the interaction dataframe, user 13-> desktop, 14, 15
-@router.get('/rcommendations/{session_id}')
-async def getRecommendations(session_id: str):
+@router.get('/recommendations_merged/{session_id}')
+async def getRecommendationsMerged(session_id: str):
     """
     - [ ] Get the dataframe based on the session id. (All interactions)
     - [ ] Convert that into an aggregation (based on algorihtms) (This should be handled by the engine)
@@ -360,8 +361,73 @@ async def getRecommendations(session_id: str):
     detailed_dict = detailed_recommednation.head(5).to_dict()
     print("detailed_dict")
     print(detailed_dict)
-    return(json.dumps(detailed_dict))
+    return(json.dumps(prod_rec))
 
 
+@router.get('/recommendations_products/{session_id}')
+async def getRecommendationsProducts(session_id: str):
+    """
+    - [x] Get the dataframe based on the session id. (All interactions)
+    - [x] Returns ids of the recommendation as List[str]
+    - [x] Get that as a function.
+    - [x] Get user Interaction as df -> function
+    
+    """
+
+    # Todo this you need to get the query of all the items with certain id. THen you want to get into an aggregation
+    allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
+    df_interacted_products = interactionLogsToDF(allUserInteraction=allUserInteraction)
+    
+    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products)
+
+    return(unique_product_id )
+
+def interactionLogsToDF(allUserInteraction: List[models.Interaction]) -> pd.core.frame.DataFrame:
+    productsRating  = dict()
+
+    eventMappings = {
+        models.EEventTypes.VIEW.value : 1,
+        models.EEventTypes.CART.value : 3,
+        models.EEventTypes.PURCHASE.value : 5,
+
+    }
+
+    for userInteraction in allUserInteraction:
+        product_id = userInteraction.product_id
+        event_type = userInteraction.event_type
+
+        if product_id not in productsRating:
+            productsRating[product_id] = 0
+        
+        try:
+            productsRating[product_id] += eventMappings[event_type]
+        except Exception as e:
+            productsRating[product_id] += 0
+
+    dictToVConvert = {}
+    product_id_row = []
+    product_score_row = []
+    for key in productsRating:
+        product_id_row.append(key)
+        product_score_row.append(productsRating[key])
+
+    dictToVConvert[ROW_PRODUCT_ID] = product_id_row
+    dictToVConvert[ROW_SCORE] = product_score_row
+
+    df_interacted_products = pd.DataFrame.from_dict(dictToVConvert)
+    return df_interacted_products
+
+def getRecommendedIdUsingDF(df_interacted_products: pd.core.frame.DataFrame, limit = -1) -> List[str]:
+    
+    recommenderEngine = RecommenderEngine(df_interacted_products, INTERACTIONS_FILEIn=INTERACTIONS_FILE, FILE_PRODUCT_MAPPINGSIn= FILE_PRODUCT_MAPPINGS)
+    
+    recommenderEngine.populateRecommendation()
+    prod_rec = recommenderEngine.getRecommendation()
+    
+    prod_rec[ROW_PRODUCT_ID] = prod_rec[ROW_PRODUCT_ID].astype(str)
+    unique_product_id = list(prod_rec[ROW_PRODUCT_ID].unique())
+    if(limit > 0):
+        return unique_product_id[:limit]
+    return unique_product_id
 
 

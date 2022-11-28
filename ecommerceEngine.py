@@ -13,7 +13,6 @@ import IPython.display as Disp
 
 
 INTERACTIONS_FILE = "dist-data/iterations.csv"
-FILE_PRODUCT_MAPPINGS = 'data/product_mappings.csv'
 
 
 ROW_USER_ID = 'user_id'
@@ -54,11 +53,11 @@ class EDataframe(Enum):
     INTERACTIONS = 'interactions'
 
 class RecommenderEngine():
-    def __init__(self, ownHistory: pd.core.frame.DataFrame, INTERACTIONS_FILEIn:str = INTERACTIONS_FILE, FILE_PRODUCT_MAPPINGSIn:str = FILE_PRODUCT_MAPPINGS):
+    def __init__(self, ownHistory: pd.core.frame.DataFrame, INTERACTIONS_FILEIn:str, FILE_PRODUCT_MAPPINGSIn:str):
         self.INTERACTIONS_FILE = INTERACTIONS_FILEIn
         self.FILE_PRODUCT_MAPPINGS = FILE_PRODUCT_MAPPINGSIn
         self.interactionDF = pd.read_csv(INTERACTIONS_FILEIn, index_col=0)
-        self.productMapping = pd.read_csv(FILE_PRODUCT_MAPPINGS, index_col=0)
+        self.productMapping = pd.read_csv(FILE_PRODUCT_MAPPINGSIn, index_col=0)
         self.ownHistory = ownHistory
         self.interactions = pd.core.frame.DataFrame()
 
