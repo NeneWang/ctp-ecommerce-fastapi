@@ -1,6 +1,6 @@
 
 from email.policy import default
-from sqlalchemy import PrimaryKeyConstraint, String,Boolean,Integer,Column, Table,Text, DateTime, ARRAY, Identity, Float, ForeignKey
+from sqlalchemy import PrimaryKeyConstraint, String,Boolean,Integer,Column, Numeric, Table,Text, DateTime, ARRAY, Identity, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import datetime, uuid
@@ -108,12 +108,29 @@ class User(Base):
     user_id=Column(String(255), nullable=True, server_default = func.gen_random_uuid())
 
 
+class Product(Base):
+    __tablename__ = "product"
+    id=Column(Integer, primary_key = True, autoincrement=True, index=True)
+    guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
+    product_id = Column(String)
+    category_id = Column(String)
+    category_code = Column(String)
+    brand = Column(String)
+    price = Column(Numeric)
+    product_name = Column(String)
+    count = Column(Numeric, nullable=True),
+    priority = Column(Numeric, nullable=True)
+
 class Account(Base):
     __tablename__ = "account"
     id=Column(Integer, primary_key = True, autoincrement=True, index=True)
     guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
-    username = Column(String)
-    password = Column(String)
+
+
+
+
+
+
 
 class ProfileCreate(BaseModel):
     name: Optional[str]
