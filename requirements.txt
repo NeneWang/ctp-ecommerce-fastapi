@@ -28,3 +28,7 @@ PyJWT
 six
 starlette
 uvicorn
+scipy
+matplotlib
+scikit-learn 
+IPython

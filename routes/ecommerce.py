@@ -8,6 +8,16 @@ from enum import Enum;
 from pydantic import BaseModel
 import datetime
 from typing import Optional
+import pandas as pd
+from ecommerceEngine import RecommenderEngine, EDataframe
+
+
+PRODUCTS_FILE = "dist-data/products.csv"
+INTERACTIONS_FILE = "dist-data/interactions.csv"
+FILE_PRODUCT_MAPPINGS = "dist-data/product_mappings.csv"
+
+ROW_PRODUCT_ID = "product_id"
+ROW_SCORE = "score"
 
 import os, json
 from dotenv import load_dotenv
@@ -15,6 +25,14 @@ db = SessionLocal()
 
 
 S3_BUCKET_NAME = 'myplatinumbucket'
+
+def load_products():
+    products_df = pd.read_csv(PRODUCTS_FILE)
+    return products_df
+
+
+df_products = load_products()
+
 
 router = APIRouter(
     prefix="/ecommerce",
@@ -191,10 +209,33 @@ async def getRecommendations(session_id: str):
         except Exception as e:
             productsRating[product_id] += 0
 
-    print(productsRating)
-    return(productsRating)
+    dictToVConvert = {}
+    product_id_row = []
+    product_score_row = []
+    for key in productsRating:
+        product_id_row.append(key)
+        product_score_row.append(productsRating[key])
 
-    pass
+    dictToVConvert[ROW_PRODUCT_ID] = product_id_row
+    dictToVConvert[ROW_SCORE] = product_score_row
+
+    df_interacted_products = pd.DataFrame.from_dict(dictToVConvert)
+    # print(df_interacted_products.head())
+    
+    recommenderEngine = RecommenderEngine(df_interacted_products, INTERACTIONS_FILEIn=INTERACTIONS_FILE, FILE_PRODUCT_MAPPINGSIn= FILE_PRODUCT_MAPPINGS)
+    
+    recommenderEngine.populateRecommendation()
+    prod_rec = recommenderEngine.getRecommendation()
+    
+    prod_rec[ROW_PRODUCT_ID] = prod_rec[ROW_PRODUCT_ID].astype(int)
+    
+    detailed_recommednation = prod_rec.merge(df_products, how="inner" , on=ROW_PRODUCT_ID)
+    detailed_recommednation = detailed_recommednation.sort_values("mean")
+    detailed_dict = detailed_recommednation.head(5).to_dict()
+    print("detailed_dict")
+    print(detailed_dict)
+    return(json.dumps(detailed_dict))
+
 
 
 
