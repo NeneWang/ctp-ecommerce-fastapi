@@ -328,6 +328,15 @@ async def getRecommendationsMerged(session_id: str):
     print(detailed_dict)
     return(detailed_dict)
 
+@router.get('/historial/{session_id}')
+async def getHistorial(session_id: str):
+    """
+    - [x] Pass Simple Dataframe as json?
+    """
+    allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
+    
+
+    return allUserInteraction
 
 @router.get('/recommendations_products/{session_id}')
 async def getRecommendationsProducts(session_id: str, limit: int=5):

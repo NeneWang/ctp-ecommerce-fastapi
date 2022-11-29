@@ -136,6 +136,7 @@ def register(auth_details: AuthDetails):
 
 
 
+
 @app.post('/login')
 def login(auth_details: AuthDetails):
     userAccount = None
