@@ -128,6 +128,11 @@ async def getDistinctCategory(limit:Optional[int] = 5):
         )
     return rows
 
+@app.get('/product_category/{category_id}', tags=["Product"])
+async def getProductsFromCategory(category_code:str, limit:Optional[int] = 5):
+    rows = db.query(models.Product).filter(models.Product.category_code==category_code).limit(limit=limit).all()
+    return rows
+
 @app.get('/product_fromtopcategories/', tags=["Product"])
 async def getDistinctCategory(limit:Optional[int] = 5):
     """
