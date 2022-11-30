@@ -114,6 +114,29 @@ def getproductslug(slug: str):
     query_product = db.query(models.Product).filter(models.Product.slug == slug).first()
     return query_product
 
+@app.get('/product_category/', tags=["Product"])
+async def getDistinctCategory(limit:Optional[int] = 5):
+    """
+    - [x] Selects distinct category codes, and order by Priority
+    """
+    SQL_QUERY = f"SELECT category_code, count(*) as category_popularity from product WHERE category_code != 'nan' GROUP BY category_code ORDER BY category_popularity DESC LIMIT {limit}"
+    rows = db.execute(SQL_QUERY).all()
+    if(rows is None):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Query: {SQL_QUERY}",
+        )
+    return rows
+
+@app.get('/product_fromtopcategories/', tags=["Product"])
+async def getDistinctCategory(limit:Optional[int] = 5):
+    """
+    - [x] Selects distinct category codes, and order by Priority
+    - [x] Selects the most popular product from that category.
+    """
+    SQL_QUERY = f"SELECT gb.category_code, gb.category_popularity, p.count as product_popularity, p.* from (select category_code, COUNT(category_code) as category_popularity FROM product GROUP BY category_code ) gb LEFT JOIN ( select  product.* FROM product INNER JOIN ( SELECT category_code, MAX(count) as maxcount FROM product GROUP BY category_code ) mp ON mp.category_code = product.category_code AND mp.maxcount = product.count ORDER BY category_code ) p ON gb.category_code = p.category_code WHERE gb.category_code != 'nan' ORDER BY category_popularity DESC, count DESC LIMIT {limit}"
+    rows = db.execute(SQL_QUERY).all()
+    return rows
 
 @app.post('/register', status_code=201)
 def register(auth_details: AuthDetails):
