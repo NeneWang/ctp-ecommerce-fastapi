@@ -1,5 +1,6 @@
 black
 fastapi
+requests
 pytest
 uvicorn
 sqlalchemy
@@ -11,6 +12,7 @@ python-multipart
 boto3
 python-dotenv
 tk
+bs4
 pandas
 numpy
 fastapi-crudrouter

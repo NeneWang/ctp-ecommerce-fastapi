@@ -17,7 +17,6 @@ from auth import AuthHandler
 
 import ast
 import boto3
-import awswrangler as wr
 import pandas as pd
 
 
