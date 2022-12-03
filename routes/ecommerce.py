@@ -380,15 +380,25 @@ async def getRecommendationsMerged(session_id: str):
 async def getHistorial(session_id: str):
     """
     - [x] Pass Simple Dataframe as json?
-    - [ ] Also pass in (Left Merge) with the product information based on their id.
+    - [x] Also pass in (Left Merge) with the product information based on their id.
+    - [x] Sorted by creation time
     """
     
     interacted_products = db.query(models.Interaction, models.Product).join( models.Product,
             models.Interaction.product_id == models.Product.product_id).filter(
-                models.Interaction.user_id == session_id).all()
+                models.Interaction.user_id == session_id).order_by(models.Interaction.created_time).all()
  
     return(interacted_products )
     
+@router.delete('/historial/{session_id}')
+async def deleteHistorialFrom(session_id: str):
+    """
+    - [ ] Deletes the historial from all interactions where session id is ...
+    """
+    db.query(models.Interaction).filter(models.Interaction.user_id == session_id ).delete()
+    db.commit()
+    return {"Message": f"Successfully deleted all interactions from {session_id}"}
+
 @router.get('/recommendations_products/{session_id}')
 async def getRecommendationsProducts(session_id: str, limit: int=5):
     """

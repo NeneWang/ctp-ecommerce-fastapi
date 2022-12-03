@@ -100,6 +100,7 @@ class Interaction(Base):
     product_id = Column(String(255), nullable=True, server_default = "")
     user_id = Column(String(255), nullable=True, server_default = "")
     event_type = Column(String, nullable=True, server_default=EEventTypes.VIEW.value )
+    created_time=Column(DateTime, nullable=True, server_default=func.now())
     
 class User(Base):
     __tablename__ = "user"
