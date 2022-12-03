@@ -128,6 +128,17 @@ class Product(Base):
     class Config:
         orm_mode = True
 
+class Banner(Base):
+    __tablename__ = "banner"
+    id=Column(Integer, primary_key = True, autoincrement=True, index=True)
+    guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
+    category_code = Column(String)
+    img_src=Column(String)
+    description = Column(String, nullable=True)
+    slug = Column(String) # based on the category_code -> For going to a site
+    popularity_score = Column(Integer, default=0) # Just in case for the future, it should click how effective the ad is and then it could decide which to display from the same category.
+
+
 
 class Product10m(Base):
     """
@@ -152,7 +163,6 @@ class Product10m(Base):
         orm_mode = True
 
 
-
 class Account(Base):
     __tablename__ = "account"
     id=Column(Integer, primary_key = True, autoincrement=True, index=True)
@@ -160,7 +170,13 @@ class Account(Base):
 
 
 
-
+class BannerSchema(BaseModel):
+    id: int
+    guid: str
+    category_code:str
+    description:str
+    slug:str
+    populaity_score: int
 
 class ProductSchema(BaseModel):
     id:int

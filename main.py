@@ -69,6 +69,13 @@ productRoutes = SQLAlchemyCRUDRouter(
 
 )
 
+bannerRoutes = SQLAlchemyCRUDRouter(
+    schema=models.BannerSchema,
+    db_model=models.Banner,
+    db=get_db,
+    prefix=models.Banner.__tablename__
+)
+
 profileRoutes = SQLAlchemyCRUDRouter(
     schema=models.ProfileSchema,
     create_schema=models.ProfileCreate,
@@ -89,6 +96,7 @@ interactionRoutes = SQLAlchemyCRUDRouter(
 
 app.include_router(profileRoutes)
 app.include_router(productRoutes)
+app.include_router(bannerRoutes)
 app.include_router(interactionRoutes)
 
 app.include_router(utils.router)
@@ -108,6 +116,30 @@ if __name__ == "__main__":
 
 auth_handler = AuthHandler()
 users = []
+
+
+@app.get('/favored/{category}', tags=["Banner"])
+def getFavoredBannerByCategory(category: str):
+    """
+    - [ ] Get the most popular (effective) Banner from that cateogry
+    - [ ] TODO: Create another API so that is more like a probability that will chose the first one if appropriate.
+    """
+    query_banner = db.query(models.Banner).filter(models.Banner.category_code == category).first()
+    
+    # What I don't get is why it doesn't create
+    return query_banner
+
+@app.post('/create_sampe', tags=["Banner"])
+def createSampleBanners():
+    """
+    Create Sample BAnners based on existent images. if repeated the image url will be adding a 0 to it's count
+    e.g. [electronics, electronics] -> [electronics_0, electronics_1]
+    """
+
+    BANNERS = []
+
+
+
 
 @app.get('/product_slug/{slug}')
 def getproductslug(slug: str):
