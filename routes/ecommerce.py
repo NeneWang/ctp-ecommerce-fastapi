@@ -302,6 +302,54 @@ def populateProducts5m(nrows:int = 10000000):
     return {"result" : "Success"}
 
 
+@router.post('/populate_ecommerce_all')
+def populateProductsAll():
+    df = pd.read_csv('data/products_oct.csv')
+    ROW_CATEGORY_CODE = "category_code"
+    ROW_CATEGORY_ID = "category_id"
+    ROW_BRAND = "brand"
+    ROW_NAME="product_name"
+    ROW_PRODUCT_ID = "product_id"
+    ROW_COUNT = "count"
+    ROW_PRICE = "price"
+
+    
+    df[ROW_CATEGORY_CODE] = df[ROW_CATEGORY_CODE].astype(str)
+    df[ROW_BRAND] = df[ROW_BRAND].astype(str) 
+
+    def getImgSrc(product_id:str):
+        return f"http://wngnelson.com/assets/img_src/oct/images/{product_id}.jpg"
+
+
+
+    products = df.drop_duplicates(ROW_NAME)
+
+    def loopProductsImages(df):
+        idx = 0
+        
+        for index, dfrow in df.iterrows():
+            idx+=1
+            model_product = models.Product(
+                product_id = dfrow[ROW_PRODUCT_ID],
+                category_id = dfrow[ROW_CATEGORY_ID],
+                category_code = dfrow[ROW_CATEGORY_CODE],
+                brand=dfrow[ROW_BRAND],
+                price=dfrow[ROW_PRICE],
+                product_name=dfrow[ROW_NAME],
+                count=dfrow[ROW_COUNT],
+                slug=slugify(dfrow[ROW_NAME]),
+                priority = idx,
+                img_src= getImgSrc(dfrow[ROW_PRODUCT_ID])
+            )
+
+            db.add(model_product)
+    
+    loopProductsImages(products)
+    db.commit()
+
+    return {"result" : "Success"}
+
+
 # Gets the interaction dataframe, user 13-> desktop, 14, 15
 @router.get('/recommendations_merged/{session_id}')
 async def getRecommendationsMerged(session_id: str):
