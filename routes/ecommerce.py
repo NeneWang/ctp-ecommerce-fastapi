@@ -380,12 +380,15 @@ async def getRecommendationsMerged(session_id: str):
 async def getHistorial(session_id: str):
     """
     - [x] Pass Simple Dataframe as json?
+    - [ ] Also pass in (Left Merge) with the product information based on their id.
     """
-    allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
     
-
-    return allUserInteraction
-
+    interacted_products = db.query(models.Interaction, models.Product).join( models.Product,
+            models.Interaction.product_id == models.Product.product_id).filter(
+                models.Interaction.user_id == session_id).all()
+ 
+    return(interacted_products )
+    
 @router.get('/recommendations_products/{session_id}')
 async def getRecommendationsProducts(session_id: str, limit: int=5):
     """
@@ -395,15 +398,19 @@ async def getRecommendationsProducts(session_id: str, limit: int=5):
     - [x] Get user Interaction as df -> function
     """
 
-    # Todo this you need to get the query of all the items with certain id. THen you want to get into an aggregation
-    allUserInteraction = db.query(models.Interaction).filter(models.Interaction.user_id == session_id).all()
-    df_interacted_products = interactionLogsToDF(allUserInteraction=allUserInteraction)
-    
-    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
-    
-    print("Recommended list", unique_product_id)
-    res_json = getProductsJSONFromList(unique_product_id)
-    return(res_json )
+
+    try:
+        interacted_products = db.query(models.Interaction).filter(
+                models.Interaction.user_id == session_id).all()
+        df_interacted_products = interactionLogsToDF(allUserInteraction=interacted_products)
+        
+        unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
+        
+        print("Recommended list", unique_product_id)
+        res_json = getProductsJSONFromList(unique_product_id)
+        return(res_json )
+    except Exception as e:
+        return []
 
 
 @router.get('/recommendations_detail_product/{product_id}')
