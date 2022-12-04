@@ -140,7 +140,7 @@ def createSampleBanners():
     "appliances.kitchen.refrigerators", "appliances.kitchen.washer", "auto.accessories.alarm", "computers.desktop",
     "computers.notebook", "computers.notebook", "electronics.audio.headphone", "electronics.clocks",
     "electronics.smartphone", "electronics.tablet", "electronics.video.tv", "electronics.video.tv"]
-    count_product_list = {} #string: int
+
     
     BANNERS_BNP = [""]
     list_banners = []
@@ -165,23 +165,27 @@ def createSampleBanners():
         return URL_BASE + category_code + getPostfix(count=count)
 
 
-    for product_category in product_banners:
-        if product_category not in count_product_list:
-            count_product_list[product_category] = 0    
-        count_product_list[product_category] += 1
+    def populateBannerList(product_banners: List[dict]):
+        count_product_list = {} #string: int
+        for product_category in product_banners:
+            if product_category not in count_product_list:
+                count_product_list[product_category] = 0    
+            count_product_list[product_category] += 1
 
-        product_link = create_product_url(category_code=product_category, count=count_product_list[product_category])
-        list_banners.append(
-            models.CreateBannerSchema(
-                category_code=product_category,
-                slug=slugify(product_category),
-                populaity_score=0,
-                is_dynamic=False,
-                img_src=product_link
+            product_link = create_product_url(category_code=product_category, count=count_product_list[product_category])
+            list_banners.append(
+                models.CreateBannerSchema(
+                    category_code=product_category,
+                    slug=slugify(product_category),
+                    populaity_score=0,
+                    is_dynamic=False,
+                    img_src=product_link
 
-            ).__dict__
-        )
+                ).__dict__
+            )
+        return list_banners
 
+    list_banners = populateBannerList(list_banners)
     return list_banners
 
 
