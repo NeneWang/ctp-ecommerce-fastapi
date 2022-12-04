@@ -179,7 +179,7 @@ class BannerSchema(BaseModel):
     category_code:str
     description:str
     slug:str
-    populaity_score: int
+    popularity_score: int
     is_dynamic: bool = False
 
 class CreateBannerSchema(BaseModel):
@@ -189,12 +189,11 @@ class CreateBannerSchema(BaseModel):
     category_code:str
     description:Optional[str]
     slug:str
-    populaity_score: int
+    popularity_score: int
     is_dynamic: bool = False
     img_src: str 
     button_text: Optional[str]
     product: Optional[str]
-    desc: Optional[str]
     small_text: Optional[str]
     large_text_1: Optional[str]
     large_text_2: Optional[str]
@@ -206,11 +205,11 @@ class BannerDynamic(BaseModel):
     category_code:str
     description:str
     slug:str
-    populaity_score: int
+    popularity_score: int
     is_dynamic=True
+    img_src: str 
     button_text: str
     product: str
-    desc: str
     small_text: str
     large_text_1: str
     large_text_2: str

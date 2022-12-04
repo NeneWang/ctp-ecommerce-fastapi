@@ -27,6 +27,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from fastapi_crudrouter import SQLAlchemyCRUDRouter
 
 from slugify import slugify
+from typing import List
 
 
 load_dotenv()
@@ -162,7 +163,7 @@ def createSampleBanners():
         return URL_BASE + category_code + getPostfix(count=count)
 
 
-    def populateBannerList(product_banners: List[str], list_banners: List[dict]):
+    def populateBannerList(product_banners: List[str], list_banners: List[models.CreateBannerSchema]):
         count_product_list = {} #string: int
         for product_category in product_banners:
             if product_category not in count_product_list:
@@ -174,14 +175,28 @@ def createSampleBanners():
                 models.CreateBannerSchema(
                     category_code=product_category,
                     slug=slugify(product_category),
-                    populaity_score=0,
+                    description="",
+                    popularity_score=0,
                     is_dynamic=False,
                     img_src=product_link
 
-                ).__dict__
+                )
             )
 
+    def publishBannerList(list_banners: List[models.CreateBannerSchema]):
+        for banner in list_banners:
+            bannerModel = models.Banner(
+                category_code = banner.category_code,
+                img_src = banner.img_src,
+                description = banner.description,
+                popularity_score = banner.popularity_score,
+                is_dynamic=banner.is_dynamic,
+            )
+            db.add(bannerModel)
+            db.commit()
+
     populateBannerList(product_banners = product_banners, list_banners=list_banners)
+    publishBannerList(list_banners=list_banners)
     return list_banners
 
 
