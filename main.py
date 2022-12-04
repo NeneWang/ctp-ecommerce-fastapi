@@ -165,7 +165,7 @@ def createSampleBanners():
         return URL_BASE + category_code + getPostfix(count=count)
 
 
-    def populateBannerList(product_banners: List[dict]):
+    def populateBannerList(product_banners: List[str], list_banners: List[dict]):
         count_product_list = {} #string: int
         for product_category in product_banners:
             if product_category not in count_product_list:
@@ -183,9 +183,8 @@ def createSampleBanners():
 
                 ).__dict__
             )
-        return list_banners
 
-    list_banners = populateBannerList(list_banners)
+    populateBannerList(product_banners = product_banners, list_banners=list_banners)
     return list_banners
 
 
