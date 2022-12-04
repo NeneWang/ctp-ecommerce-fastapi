@@ -1,16 +1,14 @@
 import uvicorn
-from fastapi import FastAPI, Depends, File, UploadFile, Path, status, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Depends, status, HTTPException
 
 # from http.client import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional, List
-from pydantic import BaseModel, Field
+from typing import Optional
 
-import shortuuid
 from database import SessionLocal, engine
 import models
-import os, json
+import os
 from dotenv import load_dotenv
 from routes import utils, ecommerce
 
@@ -19,7 +17,6 @@ from auth import AuthHandler
 
 import ast
 import boto3
-import awswrangler as wr
 import pandas as pd
 
 

@@ -1,7 +1,7 @@
 black
 fastapi
+requests
 pytest
-pylint
 uvicorn
 sqlalchemy
 datetime
@@ -12,9 +12,9 @@ python-multipart
 boto3
 python-dotenv
 tk
+bs4
 pandas
 numpy
-awswrangler
 fastapi-crudrouter
 passlib
 bcrypt
