@@ -137,8 +137,14 @@ class Banner(Base):
     description = Column(String, nullable=True)
     slug = Column(String) # based on the category_code -> For going to a site
     popularity_score = Column(Integer, default=0) # Just in case for the future, it should click how effective the ad is and then it could decide which to display from the same category.
-
-
+    is_dynamic = Column(Boolean, default=True)
+    button_text = Column(String, nullable=True, server_default= "")
+    product = Column(String, nullable=True, server_default= "")
+    desc = Column(String, nullable=True, server_default= "")
+    small_text = Column(String, nullable=True, server_default= "")
+    large_text_1 = Column(String, nullable=True, server_default= "")
+    large_text_2 = Column(String, nullable=True, server_default= "")
+    sale_time = Column(String, nullable=True, server_default= "")
 
 class Product10m(Base):
     """
@@ -162,13 +168,10 @@ class Product10m(Base):
     class Config:
         orm_mode = True
 
-
 class Account(Base):
     __tablename__ = "account"
     id=Column(Integer, primary_key = True, autoincrement=True, index=True)
     guid = Column(String(255), nullable=True, server_default = func.gen_random_uuid())
-
-
 
 class BannerSchema(BaseModel):
     id: int
@@ -177,6 +180,42 @@ class BannerSchema(BaseModel):
     description:str
     slug:str
     populaity_score: int
+    is_dynamic: bool = False
+
+class CreateBannerSchema(BaseModel):
+    """
+    They could be both static and dynamic
+    """
+    category_code:str
+    description:Optional[str]
+    slug:str
+    populaity_score: int
+    is_dynamic: bool = False
+    img_src: str 
+    button_text: Optional[str]
+    product: Optional[str]
+    desc: Optional[str]
+    small_text: Optional[str]
+    large_text_1: Optional[str]
+    large_text_2: Optional[str]
+    sale_time: Optional[str]
+
+class BannerDynamic(BaseModel):
+    id: int
+    guid: str
+    category_code:str
+    description:str
+    slug:str
+    populaity_score: int
+    is_dynamic=True
+    button_text: str
+    product: str
+    desc: str
+    small_text: str
+    large_text_1: str
+    large_text_2: str
+    sale_time: str
+
 
 class ProductSchema(BaseModel):
     id:int

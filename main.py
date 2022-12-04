@@ -29,7 +29,7 @@ from sqlalchemy import Column, String, Float, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from fastapi_crudrouter import SQLAlchemyCRUDRouter
 
-
+from slugify import slugify
 
 
 load_dotenv()
@@ -129,15 +129,60 @@ def getFavoredBannerByCategory(category: str):
     # What I don't get is why it doesn't create
     return query_banner
 
-@app.post('/create_sampe', tags=["Banner"])
+@app.post('/create_banners', tags=["Banner"])
 def createSampleBanners():
     """
     Create Sample BAnners based on existent images. if repeated the image url will be adding a 0 to it's count
-    e.g. [electronics, electronics] -> [electronics_0, electronics_1]
+    e.g. [electronics, electronics] -> [electronics, electronics_1]
     """
 
-    BANNERS = []
+    product_banners = ["apparel.shoes", "appliances.environment.air_heater", "appliances.environment.vacuum", "appliances.kitchen.oven",
+    "appliances.kitchen.refrigerators", "appliances.kitchen.washer", "auto.accessories.alarm", "computers.desktop",
+    "computers.notebook", "computers.notebook", "electronics.audio.headphone", "electronics.clocks",
+    "electronics.smartphone", "electronics.tablet", "electronics.video.tv", "electronics.video.tv"]
+    count_product_list = {} #string: int
+    
+    BANNERS_BNP = [""]
+    list_banners = []
+    # Creates dynamic banners
 
+    URL_BASE = "base_url/"
+
+    def getPostfix(count: int):
+        """
+        Get the postfix e.g. 1 -> "" 2 -> "_1"
+        """
+        if(count > 1):
+            index_id = count - 1;
+            return f"_{index_id}"
+        return ""
+
+    def create_product_url(category_code: str, count: int):
+        """
+        Gets Product URL
+        """
+        # If the count is >1: 2-> 1
+        return URL_BASE + category_code + getPostfix(count=count)
+
+
+    for product_category in product_banners:
+        if product_category not in count_product_list:
+            count_product_list[product_category] = 0    
+        count_product_list[product_category] += 1
+
+        product_link = create_product_url(category_code=product_category, count=count_product_list[product_category])
+        list_banners.append(
+            models.CreateBannerSchema(
+                category_code=product_category,
+                slug=slugify(product_category),
+                populaity_score=0,
+                is_dynamic=False,
+                img_src=product_link
+
+            ).__dict__
+        )
+
+    return list_banners
 
 
 
