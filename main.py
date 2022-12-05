@@ -144,7 +144,7 @@ def createSampleBanners():
     list_banners = []
     # Creates dynamic banners
 
-    URL_BASE = "base_url/"
+    URL_BASE = "http://wngnelson.com/assets/img_src/banners/"
 
     def getPostfix(count: int):
         """
@@ -160,7 +160,7 @@ def createSampleBanners():
         Gets Product URL
         """
         # If the count is >1: 2-> 1
-        return URL_BASE + category_code + getPostfix(count=count)
+        return URL_BASE + category_code + getPostfix(count=count) + ".png"
 
 
     def populateBannerList(product_banners: List[str], list_banners: List[models.CreateBannerSchema]):
@@ -178,7 +178,7 @@ def createSampleBanners():
                     description="",
                     popularity_score=0,
                     is_dynamic=False,
-                    img_src=product_link
+                    img_src=product_link,
 
                 )
             )
@@ -191,6 +191,7 @@ def createSampleBanners():
                 description = banner.description,
                 popularity_score = banner.popularity_score,
                 is_dynamic=banner.is_dynamic,
+                slug=banner.slug
             )
             db.add(bannerModel)
             db.commit()
@@ -210,6 +211,7 @@ def getproductslug(slug: str):
 async def getDistinctCategory(limit:Optional[int] = 5):
     """
     - [x] Selects distinct category codes, and order by Priority
+    - [ ] Include slug to results object list
     """
     SQL_QUERY = f"SELECT category_code, count(*) as category_popularity from product WHERE category_code != 'nan' GROUP BY category_code ORDER BY category_popularity DESC LIMIT {limit}"
     rows = db.execute(SQL_QUERY).all()
@@ -218,11 +220,27 @@ async def getDistinctCategory(limit:Optional[int] = 5):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Query: {SQL_QUERY}",
         )
-    return rows
 
-@app.get('/product_category/{category_id}', tags=["Product"])
+    formatted_response = []
+    for row in rows:
+        new_row = {}
+        new_row['slug'] = slugify(row.category_code)
+        new_row["category_popularity"] = row.category_popularity
+        new_row["category_code"] = row.category_code
+        formatted_response.append(new_row)
+        
+    return formatted_response
+
+@app.get('/product_category/{category_code}', tags=["Product"])
 async def getProductsFromCategory(category_code:str, limit:Optional[int] = 5):
     rows = db.query(models.Product).filter(models.Product.category_code==category_code).limit(limit=limit).all()
+    return rows
+
+@app.get('/product_category_from_slug/{category_slug}', tags=["Product"])
+async def getProductsFromCategory(category_slug:str, limit:Optional[int] = 5):
+    rows = db.query(models.Product, models.Banner).join(
+        models.Banner, models.Product.category_code == models.Banner.category_code).filter(
+            models.Banner.slug==category_slug).limit(limit=limit).all()
     return rows
 
 @app.get('/product_fromtopcategories/', tags=["Product"])

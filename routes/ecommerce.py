@@ -1,4 +1,4 @@
-from fastapi import  UploadFile, Path
+from fastapi import  UploadFile, Path, HTTPException, status
 import models
 from fastapi import APIRouter
 from sqlalchemy.sql import exists, and_, or_
@@ -12,10 +12,15 @@ from typing import Optional
 import pandas as pd
 from ecommerceEngine import RecommenderEngine, EDataframe
 from slugify import slugify
+from utils import raiseExceptionIfRowIsNone
 
 
 PRODUCTS_FILE = "dist-data/products.csv"
 INTERACTIONS_FILE = "dist-data/interactions.csv"
+
+# TODO: Uncomment this on production
+# PRODUCTS_FILE = "data/products_oct.csv"
+# INTERACTIONS_FILE = "data/oct_interactions.csv"
 FILE_PRODUCT_MAPPINGS = "dist-data/product_mappings.csv"
 
 ROW_PRODUCT_ID = "product_id"
@@ -350,12 +355,106 @@ def populateProductsAll():
     return {"result" : "Success"}
 
 
+
+def sorted_legal_category(legal_category_codes: List[str], products: List[models.ProductSchema]) -> dict:
+    dict_count_category = {} # category_code:str -> counts: int
+
+    for product in products:
+        category_code = product.category_code
+        if category_code not in dict_count_category:
+            dict_count_category[category_code] = 0
+        dict_count_category[category_code] +=1
+        
+    list_categories_attained = dict_count_category.keys()
+    list_categories_attained_that_are_legal = filter(lambda category: category in legal_category_codes, list_categories_attained)
+
+    list_legal_count_dict = {key: dict_count_category[key]  for key in list_categories_attained_that_are_legal  }
+    list_legal_sorted_d = sorted(list_legal_count_dict.items(), key=lambda x: x[1])
+    list_legal_sorted = [ x[0] for x in list_legal_sorted_d]
+    return list_legal_sorted
+
+@router.get('/banner_categories', tags=["Banner"])
+def getAvailableBannerCategories(limit:Optional[int]=20) -> List[str]:
+    """
+    - [x] Gets available categories based on the banners registered on the database
+    - [x] Dict are sorted
+    - [x] Parameter for limiting output.
+    """
+    SQL_QUERY = "SELECT category_code FROM banner  WHERE category_code != 'nan' GROUP BY category_code"
+    rows = db.execute(SQL_QUERY).all()
+    raiseExceptionIfRowIsNone(rows = rows, SQL_QUERY=SQL_QUERY)
+    list_available_categories = [ category.category_code for category  in rows ]
+    limit = get_tamed_limit(listforlimit=list_available_categories, original_limit=limit)
+    return list_available_categories[:limit]
+
+def get_tamed_limit(original_limit: int, listforlimit: List) -> int : 
+    """
+    Safeguard for if theuser chooses a limit larger than the list we want.
+    e.g. original limit: 4, list size: 2 -> 2
+
+    """
+    lenlistlimit = len(listforlimit)
+    if original_limit > lenlistlimit:
+        return lenlistlimit
+    return original_limit
+
+
+def banners_from_list(category_code_list: List[str]) -> List[models.Banner]:
+    SQL_QUERY = "SELECT * FROM banner WHERE category_code IN ("
+    categories_query:str = ""
+    category_code_list = [f"'{x}'" for x in category_code_list]
+    category_code_list = ', '.join(category_code_list)
+    SQL_QUERY += category_code_list
+    SQL_QUERY += ")"
+    rows = db.execute(SQL_QUERY).all()
+    raiseExceptionIfRowIsNone(rows= rows, SQL_QUERY=SQL_QUERY)
+
+    
+    return rows
+
+
+@router.get('/recommended_category/{session_id}', tags=["Ecommerce"])
+async def getTopRecommendedBanner(session_id: str, limit: Optional[int] = 2, append_if_default:Optional[bool] =True)->List[models.Banner]:
+    """
+    - [x] Gets the top recommended Banner based on id [Only from banners that are possible to get.]
+    - By default the top 2.
+    """
+
+    legal_codes:List[str] = getAvailableBannerCategories()
+
+
+    
+    try:
+        interacted_products = db.query(models.Interaction).filter(
+                models.Interaction.user_id == session_id).all()
+        df_interacted_products = interactionLogsToDF(allUserInteraction=interacted_products)
+        
+        unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
+        
+        res_json:List[models.ProductSchema] = getProductsJSONFromList(unique_product_id)
+        list_legal_count_dict:List[str] = sorted_legal_category(legal_category_codes=legal_codes, products=res_json)
+
+        if(append_if_default):
+            list_legal_count_dict.extend(legal_codes)
+            list_legal_count_dict = list(dict.fromkeys(list_legal_count_dict))
+        
+        tamed_limit = get_tamed_limit(listforlimit= list_legal_count_dict, original_limit=limit)
+        list_legal_count_dict = list_legal_count_dict[:tamed_limit]
+        return banners_from_list(list_legal_count_dict)
+
+    except Exception as e:
+        
+        tamed_limit = get_tamed_limit(listforlimit= legal_codes, original_limit=limit)
+        returning_categories = legal_codes[:tamed_limit]
+        return banners_from_list(returning_categories)
+
+
 # Gets the interaction dataframe, user 13-> desktop, 14, 15
 @router.get('/recommendations_merged/{session_id}')
-async def getRecommendationsMerged(session_id: str):
+async def getRecommendationsMerged(session_id: str) -> List[models.Product]:
     """
-    - [ ] Get the dataframe based on the session id. (All interactions)
-    - [ ] Convert that into an aggregation (based on algorihtms) (This should be handled by the engine)
+    - [x] Get the dataframe based on the session id. (All interactions)
+    - [x] Convert that into an aggregation (based on algorihtms) (This should be handled by the engine)
     
     """
 
@@ -416,7 +515,6 @@ async def getRecommendationsProducts(session_id: str, limit: int=5):
         
         unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
         
-        print("Recommended list", unique_product_id)
         res_json = getProductsJSONFromList(unique_product_id)
         return(res_json )
     except Exception as e:
@@ -433,15 +531,17 @@ async def getRecommendationsProductsFromDetail(product_id: str, limit: int=5):
             event_type=models.EEventTypes.PURCHASE.value
         )
     )
-    df_interacted_products = interactionLogsToDF(allUserInteraction=listInteract)
+    try:
+        df_interacted_products = interactionLogsToDF(allUserInteraction=listInteract)
     
-    unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
-    
-    print("Recommended list", unique_product_id)
-    res_json = getProductsJSONFromList(unique_product_id)
-    return(res_json )
+        unique_product_id = getRecommendedIdUsingDF(df_interacted_products=df_interacted_products, limit=5)
+        
+        res_json = getProductsJSONFromList(unique_product_id)
+        return res_json 
+    except Exception as e:
+        return []
 
-def getProductsJSONFromList(product_id_list: List[str]) -> str:
+def getProductsJSONFromList(product_id_list: List[str]) -> List[models.ProductSchema]:
     """
     [1, 2, 3] -> [Product(id: 1, ...), Product(id: 2, ...), Product(id: 3, ...)]
     """
@@ -451,7 +551,7 @@ def getProductsJSONFromList(product_id_list: List[str]) -> str:
     # TODO Delete the following for normal
     res = db.query(models.Product).filter(models.Product.product_id.in_(product_id_list)).all()
     print("using get products form list")
-    product_list = []
+    product_list: List[models.Product] = []
     
     for prod in res:
         product = models.ProductSchema(
@@ -472,7 +572,7 @@ def getProductsJSONFromList(product_id_list: List[str]) -> str:
         product_list.append(product)
 
 
-    return [ ob.__dict__ for ob in product_list]
+    return product_list
 
 def interactionLogsToDF(allUserInteraction: List[models.Interaction]) -> pd.core.frame.DataFrame:
     productsRating  = dict()

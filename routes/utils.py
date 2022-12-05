@@ -1,4 +1,4 @@
-from fastapi import  UploadFile, Path
+from fastapi import  UploadFile, Path, HTTPException, status
 import models
 from fastapi import APIRouter
 from sqlalchemy.sql import exists, and_, or_
@@ -22,8 +22,6 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
     tags=["Utils"]
 )
-
-
 
 @router.get("/welcome", status_code=200)
 async def getLogByID(id: str ):
