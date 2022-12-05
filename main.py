@@ -112,8 +112,109 @@ if __name__ == "__main__":
     uvicorn.run(app, port=8080, host='0.0.0.0')
 
 
+
+
+
+@app.get('/product_slug/{slug}')
+def getproductslug(slug: str):
+    query_product = db.query(models.Product).filter(models.Product.slug == slug).first()
+    return query_product
+
+@app.get('/product_category/', tags=["Product"])
+async def getDistinctCategory(limit:Optional[int] = 5):
+    """
+    - [x] Selects distinct category codes, and order by Priority
+    - [ ] Include slug to results object list
+    """
+    SQL_QUERY = f"SELECT category_code, count(*) as category_popularity from product WHERE category_code != 'nan' GROUP BY category_code ORDER BY category_popularity DESC LIMIT {limit}"
+    rows = db.execute(SQL_QUERY).all()
+    if(rows is None):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Query: {SQL_QUERY}",
+        )
+
+    formatted_response = []
+    for row in rows:
+        new_row = {}
+        new_row['slug'] = slugify(row.category_code)
+        new_row["category_popularity"] = row.category_popularity
+        new_row["category_code"] = row.category_code
+        formatted_response.append(new_row)
+        
+    return formatted_response
+
+@app.get('/product_category/{category_code}', tags=["Product"])
+async def getProductsFromCategory(category_code:str, limit:Optional[int] = 5):
+    rows = db.query(models.Product).filter(models.Product.category_code==category_code).limit(limit=limit).all()
+    return rows
+
+@app.get('/product_category_from_slug/{category_slug}', tags=["Product"])
+async def getProductsFromCategory(category_slug:str, limit:Optional[int] = 5):
+    rows = db.query(models.Product, models.Banner).join(
+        models.Banner, models.Product.category_code == models.Banner.category_code).filter(
+            models.Banner.slug==category_slug).limit(limit=limit).all()
+    return rows
+
+@app.get('/product_fromtopcategories/', tags=["Ecommerce"])
+async def getDistinctCategory(limit:Optional[int] = 5):
+    """
+    - [x] Selects distinct category codes, and order by Priority
+    - [x] Selects the most popular product from that category.
+    """
+    SQL_QUERY = f"SELECT gb.category_code, gb.category_popularity, p.count as product_popularity, p.* from (select category_code, COUNT(category_code) as category_popularity FROM product GROUP BY category_code ) gb LEFT JOIN ( select  product.* FROM product INNER JOIN ( SELECT category_code, MAX(count) as maxcount FROM product GROUP BY category_code ) mp ON mp.category_code = product.category_code AND mp.maxcount = product.count ORDER BY category_code ) p ON gb.category_code = p.category_code WHERE gb.category_code != 'nan' ORDER BY category_popularity DESC, count DESC LIMIT {limit}"
+    rows = db.execute(SQL_QUERY).all()
+    return rows
+
+@app.post('/register', status_code=201)
+def register(auth_details: AuthDetails):
+    if any(x['username'] == auth_details.username for x in users):
+        raise HTTPException(status_code=400, detail='Username is taken')
+    hashed_password = auth_handler.get_password_hash(auth_details.password)
+    users.append({
+        'username': auth_details.username,
+        'password': hashed_password    
+    })
+
+    mdAccount = models.Account( 
+        username= auth_details.username,
+        password= hashed_password 
+    )
+    
+    db.add(mdAccount)
+    db.commit()
+    return
+
+
+
 auth_handler = AuthHandler()
 users = []
+
+@app.post('/login')
+def login(auth_details: AuthDetails):
+    userAccount = None
+    
+    userAccount = db.query(models.Account).filter(models.Account.username == auth_details.username).first()
+    if(userAccount is None):
+        raise HTTPException(status_code=401, detail='Invalid username and/or password')
+    
+    if(userAccount is None) or (not auth_handler.verify_password(auth_details.password, userAccount.password)):
+        raise HTTPException(status_code=401, detail='Invalid username and/or password')
+
+    token = auth_handler.encode_token(userAccount.username)
+    return { 'token': token }
+
+
+@app.get('/unprotected')
+def unprotected():
+    return { 'hello': 'world' }
+
+
+@app.get('/protected')
+def protected(username=Depends(auth_handler.auth_wrapper)):
+    return { 'name': username }
+
+
 
 
 @app.get('/favored/{category}', tags=["Banner"])
@@ -200,101 +301,3 @@ def createSampleBanners():
     publishBannerList(list_banners=list_banners)
     return list_banners
 
-
-
-@app.get('/product_slug/{slug}')
-def getproductslug(slug: str):
-    query_product = db.query(models.Product).filter(models.Product.slug == slug).first()
-    return query_product
-
-@app.get('/product_category/', tags=["Product"])
-async def getDistinctCategory(limit:Optional[int] = 5):
-    """
-    - [x] Selects distinct category codes, and order by Priority
-    - [ ] Include slug to results object list
-    """
-    SQL_QUERY = f"SELECT category_code, count(*) as category_popularity from product WHERE category_code != 'nan' GROUP BY category_code ORDER BY category_popularity DESC LIMIT {limit}"
-    rows = db.execute(SQL_QUERY).all()
-    if(rows is None):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Query: {SQL_QUERY}",
-        )
-
-    formatted_response = []
-    for row in rows:
-        new_row = {}
-        new_row['slug'] = slugify(row.category_code)
-        new_row["category_popularity"] = row.category_popularity
-        new_row["category_code"] = row.category_code
-        formatted_response.append(new_row)
-        
-    return formatted_response
-
-@app.get('/product_category/{category_code}', tags=["Product"])
-async def getProductsFromCategory(category_code:str, limit:Optional[int] = 5):
-    rows = db.query(models.Product).filter(models.Product.category_code==category_code).limit(limit=limit).all()
-    return rows
-
-@app.get('/product_category_from_slug/{category_slug}', tags=["Product"])
-async def getProductsFromCategory(category_slug:str, limit:Optional[int] = 5):
-    rows = db.query(models.Product, models.Banner).join(
-        models.Banner, models.Product.category_code == models.Banner.category_code).filter(
-            models.Banner.slug==category_slug).limit(limit=limit).all()
-    return rows
-
-@app.get('/product_fromtopcategories/', tags=["Product"])
-async def getDistinctCategory(limit:Optional[int] = 5):
-    """
-    - [x] Selects distinct category codes, and order by Priority
-    - [x] Selects the most popular product from that category.
-    """
-    SQL_QUERY = f"SELECT gb.category_code, gb.category_popularity, p.count as product_popularity, p.* from (select category_code, COUNT(category_code) as category_popularity FROM product GROUP BY category_code ) gb LEFT JOIN ( select  product.* FROM product INNER JOIN ( SELECT category_code, MAX(count) as maxcount FROM product GROUP BY category_code ) mp ON mp.category_code = product.category_code AND mp.maxcount = product.count ORDER BY category_code ) p ON gb.category_code = p.category_code WHERE gb.category_code != 'nan' ORDER BY category_popularity DESC, count DESC LIMIT {limit}"
-    rows = db.execute(SQL_QUERY).all()
-    return rows
-
-@app.post('/register', status_code=201)
-def register(auth_details: AuthDetails):
-    if any(x['username'] == auth_details.username for x in users):
-        raise HTTPException(status_code=400, detail='Username is taken')
-    hashed_password = auth_handler.get_password_hash(auth_details.password)
-    users.append({
-        'username': auth_details.username,
-        'password': hashed_password    
-    })
-
-    mdAccount = models.Account( 
-        username= auth_details.username,
-        password= hashed_password 
-    )
-    
-    db.add(mdAccount)
-    db.commit()
-    return
-
-
-
-
-@app.post('/login')
-def login(auth_details: AuthDetails):
-    userAccount = None
-    
-    userAccount = db.query(models.Account).filter(models.Account.username == auth_details.username).first()
-    if(userAccount is None):
-        raise HTTPException(status_code=401, detail='Invalid username and/or password')
-    
-    if(userAccount is None) or (not auth_handler.verify_password(auth_details.password, userAccount.password)):
-        raise HTTPException(status_code=401, detail='Invalid username and/or password')
-
-    token = auth_handler.encode_token(userAccount.username)
-    return { 'token': token }
-
-
-@app.get('/unprotected')
-def unprotected():
-    return { 'hello': 'world' }
-
-
-@app.get('/protected')
-def protected(username=Depends(auth_handler.auth_wrapper)):
-    return { 'name': username }
