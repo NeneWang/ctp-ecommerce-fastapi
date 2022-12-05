@@ -108,10 +108,6 @@ models.Base.metadata.create_all(bind=engine)
 def index():
     return { "message": "Version with Reordering"}
 
-if __name__ == "__main__":
-    uvicorn.run(app, port=8080, host='0.0.0.0')
-
-
 
 
 
@@ -300,4 +296,8 @@ def createSampleBanners():
     populateBannerList(product_banners = product_banners, list_banners=list_banners)
     publishBannerList(list_banners=list_banners)
     return list_banners
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, port=8080, host='0.0.0.0')
 
