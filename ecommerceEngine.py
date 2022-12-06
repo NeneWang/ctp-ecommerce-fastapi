@@ -55,13 +55,13 @@ class EDataframe(Enum):
     INTERACTIONS = 'interactions'
 
 class RecommenderEngine():
-    def __init__(self, ownHistory: pd.core.frame.DataFrame, INTERACTIONS_FILEIn:str, FILE_PRODUCT_MAPPINGSIn:str):
+    def __init__(self, ownHistory: pd.core.frame.DataFrame, INTERACTIONS_FILEIn:str, FILE_PRODUCT_MAPPINGSIn:str, use_model: str = 'interaction_model_a'):
         # self.INTERACTIONS_FILE = INTERACTIONS_FILEIn
         # TODO Change line above
         alchemyEngine   = create_engine('postgresql://postgres:ctpcommerce27@ecommerce.caxc6cq8wvo5.us-east-1.rds.amazonaws.com/postgres', pool_recycle=3600);
         
         dbConnection    = alchemyEngine.connect();
-        self.interactionDF = pd.read_sql('select * from "interaction_model_a"', dbConnection);
+        self.interactionDF = pd.read_sql(f'select * from "{use_model}"', dbConnection);
         
         self.ownHistory = ownHistory
         self.interactions = pd.core.frame.DataFrame()

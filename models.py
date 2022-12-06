@@ -109,6 +109,47 @@ class InteractionModelB(Base):
     product_id = Column(String)
     user = Column(String)
 
+class InteractionModelC(Base):
+    """
+    Database for October Full Interaction to feed the AI model
+    """
+    __tablename__ = "interaction_model_c"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
+class InteractionModelD(Base):
+    """
+    Database for October Full Interaction to feed the AI model using capped System First 1000 000
+    """
+    __tablename__ = "interaction_model_d"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
+class InteractionModelE(Base):
+    """
+    
+    """
+    __tablename__ = "interaction_model_e"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
+
+class InteractionModelF(Base):
+    """
+    
+    """
+    __tablename__ = "interaction_model_f"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
 class Interaction(Base):
     """
     Only for storing User Session

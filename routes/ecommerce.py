@@ -69,16 +69,16 @@ router = APIRouter(
 @router.post('/create_model_a', tags=["Util"])
 def createModelA():
     """
-    Reads from csv and uploads all
+    Reads from csv and uploads intearctions in table: model=models.InteractionModelB
     """
-    populateInteractions(INTERACTIONS_FILE, model=models.InteractionModelA)
+    return populateInteractions(INTERACTIONS_FILE, model=models.InteractionModelA)
 
 @router.post('/create_model_b', tags=["Util"])
 def createModelA():
     """
-    Reads from csv that is capped on 10
+    Reads from csv that is capped on 10 in table: model=models.InteractionModelB
     """
-    populateInteractions(INTERACTIONS_FILE_CAPPED, model=models.InteractionModelB)
+    return populateInteractions(INTERACTIONS_FILE_CAPPED, model=models.InteractionModelB)
 
 
 def populateInteractions(intearaction_file, model):
@@ -86,8 +86,9 @@ def populateInteractions(intearaction_file, model):
     df[ROW_PRODUCT_ID] = df[ROW_PRODUCT_ID].astype(str)
     df[ROW_USER] = df[ROW_USER].astype(str)
     df[ROW_SCORE] = df[ROW_SCORE].astype(int)
-    
+    count = 0
     for index, dfrow in df.iterrows():
+        count+=1
         model_product = model(
             product_id = dfrow[ROW_PRODUCT_ID],
             user= dfrow[ROW_USER],
@@ -95,6 +96,7 @@ def populateInteractions(intearaction_file, model):
         )
         db.add(model_product)
     db.commit()
+    return {"Created", count}
 
 @router.get("/welcome", status_code=200)
 async def getLogByID(id: str ):
