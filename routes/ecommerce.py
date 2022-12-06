@@ -23,6 +23,7 @@ INTERACTIONS_FILE = "dist-data/interactions.csv"
 # TODO: Uncomment this on production
 # PRODUCTS_FILE = "data/products_oct.csv"
 INTERACTIONS_FILE = "data/oct_interactions.csv"
+INTERACTIONS_FILE_CAPPED = "data/oct_interactions_capped.csv"
 FILE_PRODUCT_MAPPINGS = "dist-data/product_mappings.csv"
 
 ROW_SCORE = "score"
@@ -70,13 +71,24 @@ def createModelA():
     """
     Reads from csv and uploads all
     """
-    df = pd.read_csv(INTERACTIONS_FILE)
+    populateInteractions(INTERACTIONS_FILE, model=models.InteractionModelA)
+
+@router.post('/create_model_b', tags=["Util"])
+def createModelA():
+    """
+    Reads from csv that is capped on 10
+    """
+    populateInteractions(INTERACTIONS_FILE_CAPPED, model=models.InteractionModelB)
+
+
+def populateInteractions(intearaction_file, model):
+    df = pd.read_csv(intearaction_file)
     df[ROW_PRODUCT_ID] = df[ROW_PRODUCT_ID].astype(str)
     df[ROW_USER] = df[ROW_USER].astype(str)
     df[ROW_SCORE] = df[ROW_SCORE].astype(int)
     
     for index, dfrow in df.iterrows():
-        model_product = models.InteractionModelA(
+        model_product = model(
             product_id = dfrow[ROW_PRODUCT_ID],
             user= dfrow[ROW_USER],
             score = dfrow[ROW_SCORE],
@@ -497,7 +509,6 @@ async def getRecommendationsMerged(session_id: str) -> List[models.Product]:
     detailed_recommednation = prod_rec.merge(df_products, how="inner" , on=ROW_PRODUCT_ID)
     detailed_recommednation = detailed_recommednation.sort_values("mean")
     detailed_dict = detailed_recommednation.head(5).to_dict()
-    print(detailed_dict)
     return(detailed_dict)
 
 @router.get('/historial/{session_id}')
