@@ -298,6 +298,12 @@ def createSampleBanners():
     return list_banners
 
 
+@app.post('/create_model_a', tags=["Util"])
+def createModelA():
+    """
+    Reads from csv and uploads all
+    """
+
 if __name__ == "__main__":
     uvicorn.run(app, port=8080, host='0.0.0.0')
 

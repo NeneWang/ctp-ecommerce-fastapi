@@ -20,11 +20,22 @@ INTERACTIONS_FILE = "dist-data/interactions.csv"
 
 # TODO: Uncomment this on production
 # PRODUCTS_FILE = "data/products_oct.csv"
-# INTERACTIONS_FILE = "data/oct_interactions.csv"
+INTERACTIONS_FILE = "data/oct_interactions.csv"
 FILE_PRODUCT_MAPPINGS = "dist-data/product_mappings.csv"
 
-ROW_PRODUCT_ID = "product_id"
 ROW_SCORE = "score"
+ROW_CATEGORY_CODE = "category_code"
+ROW_CATEGORY_ID = "category_id"
+ROW_BRAND = "brand"
+ROW_NAME="product_name"
+ROW_PRODUCT_ID = "product_id"
+ROW_USER="user"
+ROW_COUNT = "count"
+ROW_EVENT = "event_type"
+ROW_TIME = "event_time"
+ROW_PRICE = "price"
+ROW_SESSION = "user_session"
+ROW_IMG = "img_src"
 
 import os, json
 from dotenv import load_dotenv
@@ -48,6 +59,24 @@ router = APIRouter(
 )
 
 
+@router.post('/create_model_a', tags=["Util"])
+def createModelA():
+    """
+    Reads from csv and uploads all
+    """
+    df = pd.read_csv(INTERACTIONS_FILE)
+    df[ROW_PRODUCT_ID] = df[ROW_PRODUCT_ID].astype(str)
+    df[ROW_USER] = df[ROW_USER].astype(str)
+    df[ROW_SCORE] = df[ROW_SCORE].astype(int)
+    
+    for index, dfrow in df.iterrows():
+        model_product = models.InteractionModelA(
+            product_id = dfrow[ROW_PRODUCT_ID],
+            user= dfrow[ROW_USER],
+            score = dfrow[ROW_SCORE],
+        )
+        db.add(model_product)
+    db.commit()
 
 @router.get("/welcome", status_code=200)
 async def getLogByID(id: str ):
@@ -182,17 +211,7 @@ async def createSample():
 @router.post('/populate_ecommerce/{nrows}')
 def populateProducts(nrows:int = 1000000):
     df = pd.read_csv('data/2019-Oct.csv',nrows = nrows)
-    ROW_CATEGORY_CODE = "category_code"
-    ROW_CATEGORY_ID = "category_id"
-    ROW_BRAND = "brand"
-    ROW_NAME="product_name"
-    ROW_PRODUCT_ID = "product_id"
-    ROW_COUNT = "count"
-    ROW_EVENT = "event_type"
-    ROW_TIME = "event_time"
-    ROW_PRICE = "price"
-    ROW_SESSION = "user_session"
-    ROW_IMG = "img_src"
+    
 
     
     df[ROW_CATEGORY_CODE] = df[ROW_CATEGORY_CODE].astype(str)

@@ -48,7 +48,6 @@ async def upload(id: str, file: UploadFile):
     return {"message": f"Successfully uploaded {file.filename}", "location": uploaded_file_url}
 
 
-
 load_dotenv()
 
 dotusername = os.getenv("USER")

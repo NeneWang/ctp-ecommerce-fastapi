@@ -10,6 +10,9 @@ from PIL import Image
 import requests
 from io import BytesIO
 import IPython.display as Disp
+import psycopg2
+import pandas as pds
+from sqlalchemy import create_engine
 
 
 INTERACTIONS_FILE = "dist-data/iterations.csv"
@@ -56,7 +59,12 @@ class RecommenderEngine():
     def __init__(self, ownHistory: pd.core.frame.DataFrame, INTERACTIONS_FILEIn:str, FILE_PRODUCT_MAPPINGSIn:str):
         self.INTERACTIONS_FILE = INTERACTIONS_FILEIn
         self.FILE_PRODUCT_MAPPINGS = FILE_PRODUCT_MAPPINGSIn
-        self.interactionDF = pd.read_csv(INTERACTIONS_FILEIn, index_col=0)
+        # self.interactionDF = pd.read_csv(INTERACTIONS_FILEIn, index_col=0)
+        # TODO Change line above
+        alchemyEngine   = create_engine('postgresql://postgres:ctpcommerce27@ecommerce.caxc6cq8wvo5.us-east-1.rds.amazonaws.com/postgres', pool_recycle=3600);
+        
+        dbConnection    = alchemyEngine.connect();
+        self.interactionDF = pds.read_sql('select * from "interaction_model_a"', dbConnection);
         self.productMapping = pd.read_csv(FILE_PRODUCT_MAPPINGSIn, index_col=0)
         self.ownHistory = ownHistory
         self.interactions = pd.core.frame.DataFrame()
@@ -66,8 +74,6 @@ class RecommenderEngine():
     def getDF(self, toShow:str = EDataframe.INTERACTIONDF.value ):
         if(toShow == EDataframe.INTERACTIONDF.value):
             return self.interactionDF 
-        if(toShow == EDataframe.PRODUCTMAPPING.value):
-            return self.productMapping
         if(toShow == EDataframe.INTERACTIONDF.value):
             return self.interactions
 

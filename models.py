@@ -89,6 +89,26 @@ class EEventTypes(Enum):
     CART = "cart"
     PURCHASE = "purchase"
 
+class InteractionModelA(Base):
+    """
+    Database for October Full Interaction to feed the AI model
+    """
+    __tablename__ = "interaction_model_a"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
+class InteractionModelB(Base):
+    """
+    Database for October Full Interaction to feed the AI model using capped System
+    """
+    __tablename__ = "interaction_model_b"
+    id=Column(Integer, primary_key = True, autoincrement=True)
+    score = Column(Integer)
+    product_id = Column(String)
+    user = Column(String)
+
 class Interaction(Base):
     """
     Only for storing User Session
