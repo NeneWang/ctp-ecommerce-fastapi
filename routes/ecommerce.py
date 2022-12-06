@@ -13,6 +13,8 @@ import pandas as pd
 from ecommerceEngine import RecommenderEngine, EDataframe
 from slugify import slugify
 from utils import raiseExceptionIfRowIsNone
+import psycopg2
+from sqlalchemy import create_engine
 
 
 PRODUCTS_FILE = "dist-data/products.csv"
@@ -45,7 +47,11 @@ db = SessionLocal()
 S3_BUCKET_NAME = 'myplatinumbucket'
 
 def load_products():
-    products_df = pd.read_csv(PRODUCTS_FILE)
+    alchemyEngine   = create_engine('postgresql://postgres:ctpcommerce27@ecommerce.caxc6cq8wvo5.us-east-1.rds.amazonaws.com/postgres', pool_recycle=3600);
+        
+    dbConnection    = alchemyEngine.connect();
+    products_df = pd.read_sql('select * from "product"', dbConnection);
+    products_df['product_id'] = products_df['product_id'].astype(int)
     return products_df
 
 
