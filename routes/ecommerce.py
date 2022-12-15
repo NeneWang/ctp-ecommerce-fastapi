@@ -15,6 +15,7 @@ from slugify import slugify
 from utils import raiseExceptionIfRowIsNone
 import psycopg2
 from sqlalchemy import create_engine
+from utils import rollBack
 
 
 PRODUCTS_FILE = "dist-data/products.csv"
@@ -513,6 +514,14 @@ async def getRecommendationsMerged(session_id: str) -> List[models.Product]:
     detailed_dict = detailed_recommednation.head(5).to_dict()
     return(detailed_dict)
 
+
+@router.get('/rollback')
+def rollBack():
+    """
+    If the server suddenly stops, run this
+    """
+    rollBack(db=db)
+
 @router.get('/historial/{session_id}')
 async def getHistorial(session_id: str):
     """
@@ -520,6 +529,7 @@ async def getHistorial(session_id: str):
     - [x] Also pass in (Left Merge) with the product information based on their id.
     - [x] Sorted by creation time
     """
+    db.rollback()
     
     interacted_products = db.query(models.Interaction, models.Product).join( models.Product,
             models.Interaction.product_id == models.Product.product_id).filter(

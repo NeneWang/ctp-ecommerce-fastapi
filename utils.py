@@ -9,3 +9,6 @@ def raiseExceptionIfRowIsNone(rows, SQL_QUERY=""):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Query: {SQL_QUERY}",
         )
+
+def rollBack(db):
+    db.session.rollback()
